@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trần Lộc</title>
+    <style>
+        *{
+            font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+            font-weight: 100;
+
+        }
+        h1{
+            display:flex;
+            justify-content: center;
+        }
+        table {
+			border-collapse: collapse;
+            font-size: 10px;
+		}
+		th, td {
+			padding: 8px;
+			text-align: left;
+			border-bottom: 1px solid #ddd;
+		}
+		td.yellow {
+			background-color: yellow;
+		}
+        button{
+            padding:10px 20px;
+            background-color: rgb(62, 62, 224);
+            color :#ddd;
+            border-radius: 10px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        tr:hover {
+          background-color: #f5f5f5;
+          border: none;
+        }
+        form{
+            width: 600px;
+            margin:auto;
+        }
+        input{
+            display:flex;
+            justify-content: center;
+        }
+        label{
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>TEST CASE</h1>
+    <form>
+        <label for="file1">Tranloc:</label>
+        <input type="file" id="file1" name="file1"><br><br>
+        <label for="file2">me:</label>
+        <input type="file" id="file2" name="file2"><br><br>
+        <button type="button" onclick="compare()">Test</button>
+    </form>
+    <div id="result"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+    <script>
+function compare() {
+    var file1 = document.getElementById("file1").files[0];
+    var file2 = document.getElementById("file2").files[0];
+
+    var reader1 = new FileReader();
+    reader1.onload = function() {
+        var content1 = reader1.result;
+        var testcases1 = content1.split(/(WIN|LOSE)/).reduce(function(arr, x, i) {
+            if (i % 2 == 0) {
+                arr.push(x.replace(/-{50,}/g,'<br>--------------------------------------------------<br>'));
+            } else {
+                arr[arr.length - 1] += x;
+            }
+            return arr;
+        }, []);
+
+        var reader2 = new FileReader();
+        reader2.onload = function() {
+            var content2 = reader2.result;
+            var testcases2 = content2.split(/(WIN|LOSE)/).reduce(function(arr, x, i) {
+            if (i % 2 == 0) {
+                arr.push(x.replace(/-{50,}/g,'<br>--------------------------------------------------<br>'));
+            } else {
+                arr[arr.length - 1] += x;
+            }
+            return arr;
+            }, []);
+            var table = "<table>";
+            table += "<tr><th>Testcase</th><th>Testcase tranloc</th><th>Testcase me</th></tr>";
+
+            var numTestcases = Math.min(testcases1.length, testcases2.length);
+            for (var i = 0; i < numTestcases; i++) {
+                var testcase1 = testcases1[i].trim();
+                if (testcase1.length == 0) continue;
+                var testcase2 = testcases2[i].trim();
+                if (testcase2.length == 0) continue;
+                var diffIndex = -1;
+                for (var j = 0; j < Math.min(testcase1.length, testcase2.length); j++) {
+                    if (testcase1[j] != testcase2[j]) {
+                        diffIndex = j;
+                        break;
+                    }
+                }
+
+                var highlightedTestcase1 = "";
+                var highlightedTestcase2 = "";
+                if (diffIndex != -1) {
+                    // Sử dụng thư viện JS Diff để tìm kiếm sự khác biệt giữa hai chuỗi
+                    var dmp = new diff_match_patch();
+                    var diff = dmp.diff_main(testcase1, testcase2);
+                    dmp.diff_cleanupSemantic(diff);
+
+                    // Tạo ra các chuỗi HTML để hiển thị sự khác biệt
+                    var highlightedTestcase1 = "";
+                    var highlightedTestcase2 = "";
+                    for (var j = 0; j < diff.length; j++) {
+                        var value = diff[j][1];
+                        var diffType = diff[j][0];
+                        var spanClass = "";
+
+                        if (diffType == 1) {
+                            // Thêm thẻ <ins> nếu chuỗi 2 có phần tử mới
+                            spanClass = "ins";
+                            highlightedTestcase2 += "<span style='background-color: #FFDAC0;'>" + value + "</span>";
+                        } else if (diffType == -1) {
+                            // Thêm thẻ <del> nếu chuỗi 1 có phần tử bị xoá
+                            spanClass = "del";
+                            highlightedTestcase1 += "<span style='background-color: #FFDAC0;'>" + value + "</span>";
+                        } else {
+                            // Nếu không có sự khác biệt, thêm chuỗi vào cả hai testcase
+                            highlightedTestcase1 += value;
+                            highlightedTestcase2 += value;
+                        }
+                    }
+                } else {
+                    highlightedTestcase1 = testcase1;
+                    highlightedTestcase2 = testcase2;
+                }
+
+                table += "<tr>";
+                table += "<td>" + (i+1) + "</td>";
+                table += "<td>" + highlightedTestcase1 + "</td>";
+                table += "<td>" + highlightedTestcase2 + "</td>";
+                table += "</tr>";
+            }
+
+            table += "</table>";
+            document.getElementById("result").innerHTML = table;
+        };
+        reader2.readAsText(file2);
+    };
+    reader1.readAsText(file1);
+}
+    </script>
+</body>
+</html>
